@@ -1,0 +1,454 @@
+Unittest is a library that enables testing in an object oriented way.
+This means you can implement your tests in a way that the function
+    being tested is considered an object.
+
+OBJECT-ORIENTED-CONCEPTS:
+    test fixture:
+        this is the preparation needed to perform
+        one or more tests and any associated cleanup after.
+        this may involve setting up porxy databases,directories 
+         or servers
+
+    test case:
+        this is an individual unit of testing.
+        it checks for a specific reaction to a particular set of
+          inputs.
+        https://docs.python.org/3/library/unittest.html#unittest.TestCase
+
+    test suite:
+        collection of tests or suites that should be performed together.
+
+    test runner:
+        this is a component that organises the execution fo tests 
+          and provides outomes in a custom way according to the user.
+
+    EXAMPLE FUNCTION:
+
+                                import unittest
+
+                                class TestStringMethods(unittest.TestCase):
+
+                                    def test_upper(self):
+                                        self.assertEqual('foo'.upper(), 'FOO')
+
+                                    def test_isupper(self):
+                                        self.assertTrue('FOO'.isupper())
+                                        self.assertFalse('Foo'.isupper())
+
+                                    def test_split(self):
+                                        s = 'hello world'
+                                        self.assertEqual(s.split(), ['hello', 'world'])
+                                        # check that s.split fails when the separator is not a string
+                                        with self.assertRaises(TypeError):
+                                            s.split(2)
+
+                                if __name__ == '__main__':
+                                    unittest.main()#allows test script to be run from the cl
+
+        A test class is initiated by subclassing the unittest.TestCase class.
+        Each test function's name should start with the word "test".
+            this naming convention allows the test_runner to know which functions 
+            are tests
+        
+        #assertEqual(): check for an expected result
+        #assertTrue()/ assertFalse() : verify condition
+        #assertRaises(): check for a specific exeption.
+        #setup() : instructions  executed before each test function(prep)
+        #tearDown() : instructions executed after each test function(cleanup)
+
+        The above are used instead of the assert so that the test_runner
+            can accumulate the results and provide a report
+        
+        The above can be ran as is and will provide a simple and short report
+        You can pass (-v) into the command ine to get a more verbose response
+
+        COMMAND LINE INTERFACE:
+            I can run tests from functions, modules or classes through the terminal
+                by specifying the test_module name to test it.
+
+            For more help type:
+                python -m unittest -h
+            
+
+            COMMAND LINE OPTIONS:
+                -b, --buffer: error streams are buffered
+                -c, --catch: 'ctrl-c' during test run awaits current test to end
+                                then generates a report on all results so far
+                            a second 'ctrl-c' raises keyboard interrupt error
+                -f, --failfast: stop tests on first error
+                -k: only run tests with the specified pattern/substring
+                --locals: show local vars in traceback
+                --durations N: show slowest test cases 
+                            show speed of each test case in N-0 notation.
+    
+    TEST DISCOVERY:
+        This is simply finding out what tests have been implemented
+        implemented in TestLoader.discover(), but can also be used in the command line 
+            cd project_directory
+            python -m unittest [discover]-> used when you want to pas arguments
+        
+                [discover]:
+                    -v, --verbose: Verbose output
+                    [-s, --start-directory directory]: directory to start discovery(.default)
+                    [-p, --pattern pattern]: pattern to match test files(test*.py by default)
+                    [-t --top-level-directory directory]:top level dir of projjo(default start dir)
+
+                    #its possible to pass package name as start directory directly to test:
+                        eg: myproject.subpackage.test
+                        *NOTE: once the test files for the packages you have specified have
+                            been loaded, the packages specified are converted from paths to imports.
+                            eg : path: code/busqr/user.py
+                                 import: code.busqr.user
+
+ORGANISING TEST CODE:
+    TEST CASES:(classes/subclasses)
+        single scenarios that must be set up and checked for correctness.
+        represented by:
+            unittest.TestCase instances
+                these are subclasses of TestCase
+        
+        #in testing code a TestCase should be fully self contained in that 
+            it can be run in isolation or in a group
+        Every test case implements a test method:
+            functions that implement the logic being tested.
+            names always start with test_
+
+
+                                import unittest
+
+            ->TestCase          class WidgetTestCase(unittest.TestCase):
+            ->setup()method         setUp(self):
+                                        self.widget = Widget('The widget')
+
+                ->test_method       def test_default_widget_size(self):
+                                        self.assertEqual(self.widget.size(), (50,50),
+                                                        'incorrect default size')
+
+                ->test_method       def test_widget_resize(self):
+                                        self.widget.resize(100,150)
+                                        self.assertEqual(self.widget.size(), (100,150),
+                                                        'wrong size after resize')
+
+            ->tearDown()method      def tearDown(self):
+                                        self.widget.dispose()
+        
+
+        #in order to test summ we have to use the assert*methods 
+        #failed tests raise exceptions with explaininig messages
+        setUp(): sets up the test funcions. called for each test method.
+            if setup has an error no test method is executed
+
+        tearDown(): cleans up after the setup when all concerned tests 
+            have been run
+            tear down only runs if setup has succeded 
+        
+    TEST_FIXTURE: 
+        where a new TestCase is created as a unique test fixture to execute individual
+        test methods .
+        this is simply where setUp(), tearDown() and __init__() are called once per test.
+        this allows you to fully test functions and modules according to features.
+    TEST_SUITE:
+        this is a group of tests that tests the same features.
+        represented by unittest's TestSuite() class.
+        calling: unittest.main() collects all a modules test_cases and executes them
+        however you can build ur own test suites.
+
+
+                                    def suite():
+                                        suite = unittest.TestSuite()
+                                        suite.addTest(WidgetTestCase('test_default_widget_size'))
+                                        suite.addTest(WidgetTestCase('test_widget_resize'))
+                                        return suite
+
+                                    if __name__ == '__main__':
+                                        runner = unittest.TextTestRunner()
+                                        runner.run(suite())
+        
+
+        #defining TestCases and TestSuites in the same module as code being tested is 
+          not advisable for the following reasons:
+                >test module can be run separately
+                >easier separation of test code from source code
+                >less editing of test code
+                >easier code refractoring
+                >if testing strategy changes no need to chang sourcecode
+                >easier debugging
+                >organisation
+            
+        #thus its better to have test functions.
+
+SKIPPING TESTS AND EXPECTED TEST FAILIURES:
+    unittest supports skipping individual test functions or even entire classes 
+    it also supports marking tests as expected failiures (pre implementation)
+    -> to skip a test you only need to:
+        1. use the @unittest.skip decorator or a variant
+        2. use the skipIf() decorator
+        3. use the skipUnless() decorator
+        4. use the skipUnlessHas ...() decorator
+    
+    #you can also call TestCase.skipTest() with a setUp() or test method or 
+        directly raising skipTest
+    
+    CODE:
+                            class MyTestCase(unittest.TestCase):
+
+                                @unittest.skip("demonstrating skipping")
+                                def test_nothing(self):
+                                    self.fail("shouldn't happen")
+
+                                @unittest.skipIf(mylib.__version__ < (1, 3),
+                                                "not supported in this library version")
+                                def test_format(self):
+                                    # Tests that work for only a certain version of the library.
+                                    pass
+
+                                @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+                                def test_windows_support(self):
+                                    # windows specific testing code
+                                    pass
+
+                                def test_maybe_skipped(self):
+                                    if not external_resource_available():
+                                        self.skipTest("external resource not available")
+                                    # test code that depends on the external resource
+                                    pass
+
+
+                            #you can also skip a class as follows:
+                            @unittest.skip("showing class skipping")
+                            class MySkippedTestCase(unittest.TestCase):
+                                def test_not_run(self):
+                                    pass                     
+
+    OUTPUT: verbose on
+                            test_format (__main__.MyTestCase.test_format) ... skipped 'not supported in this library version'
+                            test_nothing (__main__.MyTestCase.test_nothing) ... skipped 'demonstrating skipping'
+                            test_maybe_skipped (__main__.MyTestCase.test_maybe_skipped) ... skipped 'external resource not available'
+                            test_windows_support (__main__.MyTestCase.test_windows_support) ... skipped 'requires Windows'
+
+                            ----------------------------------------------------------------------
+                            Ran 4 tests in 0.005s
+
+                            OK (skipped=4)                               
+
+
+    if a resource that needs to be set up is not available we can use TestCase.setup() to skip
+
+    #For expected failiures use the: expectedFailure() decorator:
+    #This is useful for tests that are known to fail but are useful for tracking down bugs in
+    EXAMPLE:
+
+                    class ExpectedFailureTestCase(unittest.TestCase):
+                        @unittest.expectedFailure
+                        def test_fail(self):
+                            self.assertEqual(1, 0, "broken")
+
+    
+    You can create your own skipping decorators by creating decorators that call skip() on 
+        test when a condition is met or not
+        EXAMPLE:
+                        def skipUnlessHasattr(obj, attr):
+                            if hasattr(obj, attr):
+                                return lambda func: func
+                            return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))
+
+
+    The following is a list of decorators and exeptions:
+        @unittest.skip(reason)
+            unconditionally skip decorated test. reason describes why
+        @unittest.skipIf(condition, reason)
+            if condition is true skip test
+        @unittest.skipUnless(condition, reason)
+            only test when  condition is true
+        @unittest.expectedFailure
+            if error occurs or test fails it is a success
+            if test passes with no errors, it has failed
+        exception unittest.SkipTest(reason)
+            raise this to skip test
+
+        
+    #setup and teardown functions, modules or classes dont run around skipped tests
+
+SUBTESTS : DISTINGUISHING TEST ITERATIONS:
+    when there are very small differences among your tests u can use the subTest() method
+        to distinguish them:
+
+        EXAMPLE:
+        CODE:
+
+                            class NumbersTest(unittest.TestCase):
+
+                                def test_even(self):
+                                    """
+                                    Test that numbers between 0 and 5 are all even.
+                                    """
+                                    for i in range(0, 6):
+                                        with self.subTest(i=i):
+                                            self.assertEqual(i % 2, 0)
+
+        OUTPUT:
+                            ======================================================================
+                            FAIL: test_even (__main__.NumbersTest.test_even) (i=1)
+                            Test that numbers between 0 and 5 are all even.
+                            ----------------------------------------------------------------------
+                            Traceback (most recent call last):
+                            File "subtests.py", line 11, in test_even
+                                self.assertEqual(i % 2, 0)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            AssertionError: 1 != 0
+
+                            ======================================================================
+                            FAIL: test_even (__main__.NumbersTest.test_even) (i=3)
+                            Test that numbers between 0 and 5 are all even.
+                            ----------------------------------------------------------------------
+                            Traceback (most recent call last):
+                            File "subtests.py", line 11, in test_even
+                                self.assertEqual(i % 2, 0)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            AssertionError: 1 != 0
+
+                            ======================================================================
+                            FAIL: test_even (__main__.NumbersTest.test_even) (i=5)
+                            Test that numbers between 0 and 5 are all even.
+                            ----------------------------------------------------------------------
+                            Traceback (most recent call last):
+                            File "subtests.py", line 11, in test_even
+                                self.assertEqual(i % 2, 0)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            AssertionError: 1 != 0
+
+
+    If the subtest hadnt been defined execution whould have stopped at the first error:
+                            ======================================================================
+                            FAIL: test_even (__main__.NumbersTest.test_even)
+                            ----------------------------------------------------------------------
+                            Traceback (most recent call last):
+                            File "subtests.py", line 32, in test_even
+                                self.assertEqual(i % 2, 0)
+                            AssertionError: 1 != 0
+
+    Also notice that in the above the value of i is not displayed whereas the subtest allows
+        the value of i to be displayed
+    #subtests can help with debugging and error handling
+
+    
+
+CLASSES AND FUNCTIONS:
+    This is the api of unittest
+    https://docs.python.org/3/library/unittest.html#test-cases
+
+    TEST CASES:
+        class unittest.testCase(methodName='runTest')
+            this is a baseclass where subclasses are used to implement the low level logic
+            it implements the  basic interface of a test case and test runner
+            Test case instanciation provides thee groups of methods:
+                1. test runners
+                2. test implementation: checks conditions and reports failiures
+                3.  test discovery: finds tests in modules and packages and gathers 
+                    info about the test itself.
+
+                1.TEST RUNNERS:
+                    setUp()
+                        Prepares  the test environment
+                        Errors raised not considered test failiures
+
+                    tearDown()
+                        Cleans up the test environment after  the test has been run
+                        Errors raised not considered test failures
+                        runs even if the  test fails
+
+                    @classmethod
+                    setUPClass()
+                        sets up class test environment
+                        called as a class method
+                        runs before the first test in the class
+
+                    @classmethod
+                    tearDownClass()
+                        called after all tests in class have run
+                        runs even if a test fails
+                        cleans up test environment
+
+                    run(result=None)
+                        run the test. 
+                        returns result to run's caller
+
+                    skipTest()
+                        skips current test
+
+                    subTest([msg=none], [**params])
+                        runs enclosed code block as a subtest
+                        you can nest subtests
+                        you can conduct as many subtests as you need in a testcase
+
+                    debug()
+                        run test without collecting the result
+                        exeptions raised returned to the caller
+                        if an error occurs it is immediately raised and you can
+                            interact with it
+
+                2. TEST IMPLEMENTATION:
+                    assert methods used to check for and report failiures
+                    all accept a third msg argument that can be passed as an error message on failiures
+                    # x can be an expression function or value
+
+                    assertEqual(a, b) : a==b
+                    assertNotEqual(a, b) : a!=b
+                    assertTrue(x) :  x==True
+                    assertFalse(x) : x==False
+                    assertIs(a, b) : a is b
+                    assertIsNot(a, b) : a is not b
+                    assertIsNone(x) :  x is None
+                    assertIsNotNone(x) : x is not None
+                    assertIn(a, b) : a in b
+                    assertNotIn(a, b) : a not in b
+                    assertIsInstance(a, b) : isinstance(a, b)object a is an instance of class b
+                    assertNotIsInstance(a, b) : not isinstance(a, b) object a is not an instance of class b
+
+                    #the following methods do more specific checks
+                    assertAlmostEqual(a,b, places=7, msg=None, delta=None) : round(a-b, 7dp)==0
+                    assertNotAlmostEqual(a,b, places=7, msg=None, delta=None) : round(a-b, 7dp)!=0
+                        testing for approximate equality
+                        computes difference and rounding given number to given decimal places 
+                        compares result to zero
+                        if delta is supplied, difference btw first and second must be equal or less than delta
+                        
+                    assertGreater(a, b) : a>b
+                    assertGreaterEqual(a, b) : a>=b
+                    assertLess(a, b) : a<b
+                    assertLessEqual(a, b) : a<=b
+                    assertRegex(a, b) : re.search(b, a)
+                    assertNotRegex(a, b) : re.search(b, a) is None
+                    assertCountEqual(a, b) : a and b have the same elements regardless of order
+
+                    it is also possible to check th production of exceptions, warnings and log messages
+                    assertRaises(exception, callable, *args, **kwargs)
+                        assert that callable raises exception
+                        passes if specified exception is raised
+
+                    assertRaisesRegex(exception, regex, callable, *args, **kwargs)
+                        assert that callable raises exception with regex in the exception message
+
+                    assertWarns(warning, callable, *args, **kwargs)
+                        assert that callable raises warning
+
+                    assertWarnsRegex(waring,regex, callable, *args, **kwargs)
+                        assert that regex matches warning or some of it
+                    
+                    assertLogs(logger=None, level=None)
+                        assert that logger emits log messages
+                        level can be one of DEBUG, INFO, WARNING, ERROR, CRITICAL or a numeric logging level
+                        logger has to either be a logging.Logger object or a str giving a logger name
+                        test passes if  at least one log message is emitted within the with block
+                            and it matches with the logger and level conditions
+                        object returned keeps track of matching log messages.
+                        it has two attributes:
+                            records: list of matching log records
+                            messages: list of matching log messages
+                            records and messages are lists of tuples of (level, msg, args)
+                    
+                    assertNoLogs(logger=None, level=None)
+                        ensures no  log messages are emitted
+                        same conditions as assertLogs
+                    
+                    
