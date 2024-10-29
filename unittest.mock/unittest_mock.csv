@@ -1,0 +1,239 @@
+This is a library that allows you to mock objects in your code 
+    and make assertions on their usage
+Mock is based on the action->assertion model
+To ensure mock objects have the same attributes as the objects they
+    are replacing we use auto-speccing
+Auto-speccing can be done through:
+    autospec argument to patch
+    cerate_autospec() function
+This ensures that any mock functions and method have the same call signatures as
+    the real objects and they fail in the same way as the production code if used 
+    incorrectly
+cerate_autospec() can also be used on classes where it copies the signatures
+    of the __init__ method and on callable objects copying the __call__ method
+
+
+MOCK CLASS:
+    Mock: 
+        is a flexible mock object intended to replace the use of stubs and test doubles
+        It can be used to mock out any object, method, or function
+        Mocks are callable and create attributes as new mocks when called
+        Accessing the same attribute will return the same mock.
+        Mocks record how theyre used allowing you to assert on the same
+
+    MagicMock:
+        subclass of mock with methods pre created and ready to use
+    NonCallableMock
+    NonCallableMagicMock:
+        mock out non callable objects
+
+    @patch:
+        decorators
+        ease the temporary replacement of classes with mock objects easier
+        @patch('module.Class') will replace the class with a mock object
+        patch autocreates a MagicMock for you
+
+    class unittest.mock.Mock(spec=Name, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
+        create a new mock object
+        Takes several arguments that manipulate the behaviour:
+            spec:
+                can be a list of strings or an existing object(a class or instance)
+                If spec is an object, it will be used to create the mock object
+                If spec is a list of strings, the mock object will be created with the specified attributes
+
+            spec_set:
+                stricter version of spec
+                it is used when you dont want data manipulation
+
+            side_effect:
+                called whenever the mock is called
+                used to raise exceptions and change return values
+                return value of this function used as the return value
+                can also be used to raise exceptions
+                if it is an iterable, each call to mock returns the next value
+                if it is a function, it is called with the call arguments and returns the result
+
+            return_value:
+                value returned on a mock call.
+                defaults to a new mock
+
+            unsafe:
+                is booleam
+                setting it to tru  will make the mock object behave like a real object
+                this gives access to assert attributes
+
+            wraps:
+                item for mock object to wraps
+                if passed mock call passses call through to wrapped object returning that result(of wrapped object)
+                attribute access to mock returns a mock object that wraps corresponding wrapped object's attribute
+                if return_value is set then calls are not passed to wrappt object, return_value is used instead
+
+            name:
+                if mock has a name, it is used in the report of the mock
+                this is useful for debugging
+
+    
+    assert_called():
+        asserts that mock was called at least once 
+                            mock = Mock()
+                            mock.method()
+                            mock.method.assert_called()
+
+    assert_called_once():
+        assert mock was called exactly once
+
+    assert_called_with(*args, **kwargs):
+        asserts that last call was done a specified way
+
+    assert_called_once_with(*args, **kwargs)
+        asserts that last call was done a specified way and was called exactly once
+
+    assert_any_call(*args, **kwargs)
+        assert mock has been called  with the specified arguments at least once
+
+    assert_has_calls(calls, any_order=False):
+        checks that the mock has been called as specified.
+        if any_order is false, calls must be sequential but there can be calls before or after
+        if any_order is true, they can be in any order but must all appear in mock_calls
+
+    assert_not_called():
+        assert mock was never called
+
+    reset_mock(*, return_value=False, side_effect=False)
+        resets all call attributes on a mock
+        this is useful when you want to use the same object for different assertions
+        if you want to reset return_value and side_effect set them to true
+        
+    mock_add_spec(spec, spec_set=False)
+        adds spec to a mock
+        spec can either be an object or list of strings
+        only attributes from the spec can be fetched as mock attributes
+        if spec_set is true only attributes of the spec can be set
+
+    attach_mock(mock, attribute)
+        attaches a mock as an attribute of this mock
+        calls to other mock recorded in this one 
+    
+    configure_mock(**kwargs)
+        set attrs of mock through kwargs
+        it exists to make is easier to do configs after mock has been created
+        attrs plus return values and side_effects can be set on child mocks using standard dot notation
+                            mock= Mock()
+                            attrs = {'method.return_value':3, 'other.side_effect':KeyError}
+                            mock.configure_mock(**attrs)
+                            mock.method()
+                        3
+                            mock.other()
+                        KeyError
+
+        this same thing can be achieved by using a constructor call to mock
+                        attrs= {'method.return_value':3, 'other.side_effect': KeyError}
+                        mock = Mock(some_attribute='eggs', **attrs)
+                        mock.some_attribute
+                    'eggs'
+                        mock.Method()
+                    3
+                        mock.Other()
+                    KeyError
+
+    __dir__()
+        mock objects limit the results to useful ones 
+
+    _get_child_mock(**kwargs)
+        creates chikd mocks for attrs and return values
+        by default chldren are same type as parent
+        if spec is provided, children are of that type
+    
+    called 
+        bool value repping whether mock has been called or not
+    
+    call_count
+        int repping how many times mock has been called
+
+    return_value
+        configures value returned by calling mock
+        can be set to any value, including None
+        default is a configurable object
+        can be set in the constructor
+
+    side_effect
+        this can either be a callable function, an iterable or an exception
+        function: called with the same arguments as mock and return value is passed to the mock 
+            unless it is default
+        iterable: retreives an iterator which yields a value on every call
+    
+    call_args.args
+    call_args.kwargs
+        either none if mock isnt called or arguments that mock was last called with
+        returns a tuple.
+        first member is the args - any ordered args mock was called with(or an empty tuple)
+        second member is the kwargs - keyword args passed (or an empty dict)
+        call_args along with members of call_args_list, method_calls and mock_calls are call objects
+        call objects are tuples and can be unpacked to get the individual args  and kwargs to make more 
+            complex assertions
+
+    call_args_list
+        list of all calls made to mock object in sequence
+        list length is no of times it has been called
+        if calls are none, its an empty list
+
+    method_calls
+        a tracker for method and attribute calls 
+        members of method_calls are call objects 
+        these are tuples that can be unpacked
+
+    mock_calls
+        a tracker for all calls made to mock object its methods , magic methods and return value mocks
+        made up of call objects which can be unpacked as tuples to get individual args
+        NB: when nested calls are made, parameters of ancestor calls are not recorded
+
+    __class__
+        this attributes returns mock object  type
+        if mock object has a spec ,  it returns the spec type
+        class is assignable giving you  the ability to change the mock object type
+                mock.__class__ = dict
+
+    
+    class unittest.mock.NonCallableMock(spec=None,  wraps=None, name=None, spec_set=None, **kwargs)
+        a non callable version of mock
+        all attributes are the same as mock except return_value and side_effect which have no meaning
+        mock objects that use a class or instance as spec or spec_set pass tests
+        mock classes and patch() decorators take kwargs for configuration
+        for @patch kwargs are passed to the mock constructor
+                    mock = MagicMock(attribute=3, other='fish')
+                    mock.attribute
+                3
+                    mock.other
+                'fish'
+
+        retrun val and side effoect of child mocks can be set in the same way using dotted notation
+        though you cant use dotted names directly in a call so you have to create a dict and unpack it using **
+
+                    attrs= {'method.return_value':3, other.side_effect': KeyError}
+                    mock = Mock(some_attribute="love", **attrs)
+                    mock.some_attribute
+                'eggs'
+                    mock.method()
+                3
+                    mock.other()
+                KeyError
+
+        speccing auto applies calls to the actual objects values whether passed positionally or by argument
+               def f(a,b,c) : pass
+
+               mock= Mock(spec=f)
+               mock(1,2,c=3)
+
+               mock.assert_called_with(1,2,3)
+               mock.assert_called_with(a=1,b=2,c=3)
+
+        auto speccing also applies changes to method calls on mock object
+
+    
+    class unittest.mock.PropertyMock(*args, **kwargs)
+        a mock intended for the purpose of property testing on a class 
+        it provides __get__() and __set__() methods to specify return values when fetched
+        fetching this mock calls it with no arguments (returns are allready set)
+        setting it calls mock with value being set(setter function)
+
+            
